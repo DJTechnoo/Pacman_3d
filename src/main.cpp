@@ -24,6 +24,10 @@ void keyBoard(GLFWwindow * window);
 void mouseCall(GLFWwindow * window, double mX, double mY);
 void getDeltaTime();
 
+// collision stuff
+bool collision(Player &p, glm::vec3 &other); // AABB - AABB collision
+void collideWithBricks();
+
 
 
 // deltatime
@@ -212,7 +216,7 @@ int main()
 
 	//	Texture
 	int width, height, nrChannels;
-	unsigned char * data = stbi_load("../Assets/KaiYun.jpg",&width, &height, &nrChannels, 0);
+	unsigned char * data = stbi_load("../Assets/container.jpg",&width, &height, &nrChannels, 0);
 
 	GLuint texture1;
 	glGenTextures(1, &texture1);
@@ -241,7 +245,6 @@ int main()
 
 	// loop
 	while (!glfwWindowShouldClose(window)) {
-
 		getDeltaTime();
 		keyBoard(window);
 
@@ -285,6 +288,7 @@ int main()
 		glUniform4f(vertexColorLocation, 0.0f, 1.0f, 1.0f, 1.0f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
+		collideWithBricks();
 		
 
 		glfwSwapBuffers(window);
@@ -377,6 +381,31 @@ void mouseCall(GLFWwindow * window, double mX, double mY)
 
 }
 
+
+bool collision(Player &p, glm::vec3 &other) // AABB - AABB collision
+{
+	// Collision x-axis?
+
+	bool collisionX = p.getX() + 1 >= other.x &&
+		other.x + 1 >= p.getX();
+	// Collision y-axis?
+	bool collisionY = p.getY() + 1 >= other.y &&
+		other.y + 1 >= p.getY();
+	// Collision only if on both axes
+	return collisionX && collisionY;
+}
+
+
+
+
+
+void collideWithBricks() {
+		std::cout << "fuck \n";
+	for (unsigned int i = 0; i < posMap.size(); i++) {
+		if (collision(player, posMap[i]))
+			std::cout << "collide \n";
+	}
+}
 
 /* TODO		COLLISION
 

@@ -34,3 +34,16 @@ glm::vec3 Player::getPlayerPos()
 {
 	return pos;
 }
+
+float Player::getX()
+{
+	return pos.x;
+}
+float Player::getY()
+{
+	return pos.y;
+}
+float Player::getZ()
+{
+	return pos.z;
+}

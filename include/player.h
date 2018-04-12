@@ -19,6 +19,9 @@ public:
 	Player(float spd, float stX, float stY, float stZ);
 	void update(float dt);
 	glm::vec3 getPlayerPos();
+	float getX();
+	float getY();
+	float getZ();
 };
 
 
