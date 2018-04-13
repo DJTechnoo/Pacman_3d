@@ -13,7 +13,7 @@
 #include "const.h"
 #include "player.h"
 
-
+const float SIZE = 0.99f;
 
 
 //
@@ -26,7 +26,7 @@ void getDeltaTime();
 
 // collision stuff
 bool collision(glm::vec3 &p, glm::vec3 &other); // AABB - AABB collision
-void collideWithBricks();
+void collideWithBricks(Player & p);
 
 
 
@@ -47,6 +47,10 @@ float lastMouseY = WIN_HEIGHT / 2.0f;
 Player player(10.0f, glm::vec3(-15.0f, -15.0f, 0.0f));
 
 
+// lists
+std::vector<Player> ghosts;
+
+std::vector<glm::vec3> posMap;
 //
 //	SHADER
 //
@@ -76,7 +80,6 @@ const char * fragmentShaderSrc = "#version 330 core \n"
 
 
 
-std::vector<glm::vec3> posMap;
 
 //
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	Main @@@@@@@@@@@@@
@@ -228,8 +231,7 @@ int main()
 
 
 
-	MapLoader gameMap("../Assets/level0.DTA");
-	gameMap.getMap(posMap);
+	
 
 	
 
@@ -243,14 +245,16 @@ int main()
 	unsigned int projLoc = glGetUniformLocation(shaderProgram, "projection");
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, &projection[0][0]);
 
+
 	// loop
 	while (!glfwWindowShouldClose(window)) {
 		getDeltaTime();
 		keyBoard(window);
 
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(0.1f, 0.1f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glBindTexture(GL_TEXTURE_2D, texture1);
+
 
 
 		glm::mat4 view;
@@ -260,12 +264,8 @@ int main()
 		unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
 
-		
-
 		int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");	// getting the index of uniform in that program
 		glUniform4f(vertexColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
-
-
 
 		glBindVertexArray(VAO);
 		unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
@@ -278,18 +278,33 @@ int main()
 		}
 
 
-		collideWithBricks();
 		// UPDATE PLAYER POS
+		collideWithBricks(player);
 		player.update(deltaTime);
 		glm::mat4 playerModel;
 		playerModel = glm::translate(playerModel, player.getPlayerPos());
-		playerModel = glm::scale(playerModel, glm::vec3(0.99f));
+		playerModel = glm::scale(playerModel, glm::vec3(SIZE));
 		
-
 		// DRAW PLAYER
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &playerModel[0][0]);
 		glUniform4f(vertexColorLocation, 0.0f, 1.0f, 1.0f, 1.0f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
+
+		// UPDATE GHOSTS
+		for (unsigned int i = 0; i < ghosts.size(); i++) {
+			collideWithBricks(ghosts[i]);
+			ghosts[i].update(deltaTime);
+			glm::mat4 ghostModel;
+			ghostModel = glm::translate(ghostModel, ghosts[i].getPlayerPos());
+			ghostModel = glm::scale(ghostModel, glm::vec3(SIZE));
+
+			// DRAW GHOST
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &ghostModel[0][0]);
+			glUniform4f(vertexColorLocation, 0.2f, 0.2f, 0.2f, 1.0f);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		
 
@@ -318,6 +333,13 @@ void init()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	MapLoader gameMap("../Assets/level0.DTA");
+	gameMap.getMap(posMap);
+	ghosts.push_back(Player(1, true, 10.0f, glm::vec3(-14.0f, -14.0f, 0.0f)));
+	ghosts.push_back(Player(2, true, 10.0f, glm::vec3(-16.0f, -16.0f, 0.0f)));
+	ghosts.push_back(Player(0, true, 10.0f, glm::vec3(-13.0f, -14.0f, 0.0f)));
+	ghosts.push_back(Player(3, true, 10.0f, glm::vec3(-14.0f, -16.0f, 0.0f)));
 }
 
 
@@ -404,10 +426,10 @@ bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
 {
 	// Collision x-axis?
 
-	bool collisionX = p.x + 0.99f >= other.x &&
+	bool collisionX = p.x + SIZE >= other.x &&
 		other.x + 1 >= p.x;
 	// Collision y-axis?
-	bool collisionY = p.y + 0.99f >= other.y &&
+	bool collisionY = p.y + SIZE >= other.y &&
 		other.y + 1 >= p.y;
 	// Collision only if on both axes
 	return collisionX && collisionY;
@@ -417,7 +439,7 @@ bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
 
 
 
-void collideWithBricks() {
+/*void collideWithBricks() {
 	for (unsigned int i = 0; i < posMap.size(); i++) {
 		if (collision(player.getLookPos(), posMap[i])) {
 			// std::cout << "collide \n";
@@ -432,6 +454,26 @@ void collideWithBricks() {
 			player.lookahead = player.getPlayerPos();
 			player.direction = -1;
 		}
+	}
+}*/
+
+void collideWithBricks(Player & p) {
+	for (unsigned int i = 0; i < posMap.size(); i++) {
+		if (collision(p.pos, posMap[i])) {
+			while (collision(p.getPlayerPos(), posMap[i])) {
+				p.setPos(-0.01f);
+				std::cout << "fuck \n";
+
+			}
+			//player.setPos(-0.01f);
+			if(!p.isGhost)
+				p.direction = -1;
+			else {
+				p.direction++;
+				if (p.direction > 3)p.direction = 0;
+			}
+		}
+		
 	}
 }
 

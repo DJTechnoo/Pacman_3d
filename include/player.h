@@ -9,14 +9,17 @@
 
 class Player {
 private:
-	glm::vec3 pos;
 public:
+	glm::vec3 pos;
 	float speed;
 	glm::vec3 lookahead;
 	int direction;
+	bool isGhost;
 
 	Player();
+	Player(int startDir, bool ghost, float spd, glm::vec3 startPos);
 	Player(float spd, glm::vec3 startPos);
+	Player(int startDir, bool ghost, float spd, float stX, float stY, float stZ);
 	Player(float spd, float stX, float stY, float stZ);
 	void update(float dt);
 	void setPos(float d);

@@ -2,12 +2,33 @@
 
 Player::Player() {};
 
+Player::Player(int startDir, bool ghost, float spd, glm::vec3 startPos)
+{
+	speed = spd;
+	pos = startPos;
+	direction = startDir;
+	isGhost = ghost;
+
+}
+
+
+Player::Player(int startDir, bool ghost, float spd, float stX, float stY, float stZ)
+{
+	speed = spd;
+	pos.x = stX;
+	pos.y = stY;
+	pos.z = stZ;
+	direction = startDir;
+	isGhost = ghost;
+}
+
 Player::Player(float spd, glm::vec3 startPos)
 {
 	speed = spd;
 	pos = startPos; 
 	direction = -1;
-	lookahead = pos;
+	isGhost = false;
+	
 }
 
 
@@ -18,7 +39,7 @@ Player::Player(float spd,float stX, float stY, float stZ)
 	pos.y = stY;
 	pos.z = stZ;
 	direction = -1;
-	lookahead = pos;
+	isGhost = false;
 }
 
 void Player::update(float dt)
