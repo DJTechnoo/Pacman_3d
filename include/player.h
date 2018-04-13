@@ -10,18 +10,25 @@
 class Player {
 private:
 	glm::vec3 pos;
-	float speed;
 public:
+	float speed;
+	glm::vec3 lookahead;
 	int direction;
 
 	Player();
 	Player(float spd, glm::vec3 startPos);
 	Player(float spd, float stX, float stY, float stZ);
 	void update(float dt);
+	void setPos(float d);
 	glm::vec3 getPlayerPos();
 	float getX();
 	float getY();
 	float getZ();
+
+	glm::vec3 getLookPos();
+	float lookX();
+	float lookY();
+	float lookZ();
 };
 
 

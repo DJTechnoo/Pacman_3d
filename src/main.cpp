@@ -25,7 +25,7 @@ void mouseCall(GLFWwindow * window, double mX, double mY);
 void getDeltaTime();
 
 // collision stuff
-bool collision(Player &p, glm::vec3 &other); // AABB - AABB collision
+bool collision(glm::vec3 &p, glm::vec3 &other); // AABB - AABB collision
 void collideWithBricks();
 
 
@@ -44,7 +44,7 @@ float lastMouseY = WIN_HEIGHT / 2.0f;
 
 // player stuff
 			// spd				start location
-Player player(6.0f, glm::vec3(0.0f, 0.0f, 0.0f));
+Player player(10.0f, glm::vec3(-15.0f, -15.0f, 0.0f));
 
 
 //
@@ -278,17 +278,19 @@ int main()
 		}
 
 
+		collideWithBricks();
 		// UPDATE PLAYER POS
 		player.update(deltaTime);
 		glm::mat4 playerModel;
 		playerModel = glm::translate(playerModel, player.getPlayerPos());
+		playerModel = glm::scale(playerModel, glm::vec3(0.99f));
+		
 
 		// DRAW PLAYER
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &playerModel[0][0]);
 		glUniform4f(vertexColorLocation, 0.0f, 1.0f, 1.0f, 1.0f);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		collideWithBricks();
 		
 
 		glfwSwapBuffers(window);
@@ -321,7 +323,7 @@ void init()
 
 void keyBoard(GLFWwindow * window)
 {
-	 
+
 	float camSpd = 20.5f * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
@@ -338,19 +340,19 @@ void keyBoard(GLFWwindow * window)
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		player.direction = 0;
-		
+
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 		player.direction = 1;
-	
+
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 		player.direction = 2;
-		
+
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		player.direction = 3;
-		
+
 	}
 }
 
@@ -359,6 +361,8 @@ void getDeltaTime()
 	float currentFrame = (float)glfwGetTime();
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
+
+	//deltaTime = 0.01f;
 
 }
 
@@ -382,7 +386,7 @@ void mouseCall(GLFWwindow * window, double mX, double mY)
 }
 
 
-bool collision(Player &p, glm::vec3 &other) // AABB - AABB collision
+/*bool collision(Player &p, glm::vec3 &other) // AABB - AABB collision
 {
 	// Collision x-axis?
 
@@ -393,6 +397,20 @@ bool collision(Player &p, glm::vec3 &other) // AABB - AABB collision
 		other.y + 1 >= p.getY();
 	// Collision only if on both axes
 	return collisionX && collisionY;
+}*/
+
+
+bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
+{
+	// Collision x-axis?
+
+	bool collisionX = p.x + 0.99f >= other.x &&
+		other.x + 1 >= p.x;
+	// Collision y-axis?
+	bool collisionY = p.y + 0.99f >= other.y &&
+		other.y + 1 >= p.y;
+	// Collision only if on both axes
+	return collisionX && collisionY;
 }
 
 
@@ -400,24 +418,20 @@ bool collision(Player &p, glm::vec3 &other) // AABB - AABB collision
 
 
 void collideWithBricks() {
-		std::cout << "fuck \n";
 	for (unsigned int i = 0; i < posMap.size(); i++) {
-		if (collision(player, posMap[i]))
-			std::cout << "collide \n";
+		if (collision(player.getLookPos(), posMap[i])) {
+			// std::cout << "collide \n";
+			player.lookahead = player.getPlayerPos();
+			while (!collision(player.getPlayerPos(), posMap[i])){
+				player.setPos(0.01f);
+				player.lookahead = player.getPlayerPos();
+				std::cout << "fuck \n";
+				
+			}
+			player.setPos(-0.01f);
+			player.lookahead = player.getPlayerPos();
+			player.direction = -1;
+		}
 	}
 }
 
-/* TODO		COLLISION
-
-	collision(objA, objB){
-		return collision;
-	}
-
-	collisionWithSurroundingObjects(playerPos, posMap){
-		for(posMap)
-		if collision(player, posMap[i])
-			pushBack();
-	}
-
-
-*/
