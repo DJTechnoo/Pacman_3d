@@ -13,7 +13,7 @@
 #include "const.h"
 #include "player.h"
 
-const float SIZE = 0.99f;
+
 
 
 //
@@ -27,7 +27,7 @@ void getDeltaTime();
 // collision stuff
 bool collision(glm::vec3 &p, glm::vec3 &other); // AABB - AABB collision
 void collideWithBricks(Player & p);
-void collideWithFood(Player & p);
+void collideWithEverything(Player & p);
 
 
 
@@ -281,7 +281,7 @@ int main()
 		}
 
 		// DRAW AND UPDATE FOOD
-		collideWithFood(player);
+		collideWithEverything(player);
 		glUniform4f(vertexColorLocation, 1.0f, 0.2f, 1.0f, 1.0f);
 		for (unsigned int i = 0; i < posFood.size(); i++) {
 			glm::mat4 model;
@@ -294,8 +294,6 @@ int main()
 
 
 		// UPDATE PLAYER
-		collideWithBricks(player);
-		// and collidewithghost(   );
 		player.update(deltaTime);
 		glm::mat4 playerModel;
 		playerModel = glm::translate(playerModel, player.getPlayerPos());
@@ -353,6 +351,8 @@ void init()
 	MapLoader gameMap("../Assets/level0.DTA");
 	gameMap.getMap(posMap);
 	gameMap.getFood(posFood);
+	player.pos = gameMap.getTypePos(PLAYER_POS);
+	std::cout << "player " << player.pos.x << '\n';
 
 
 	ghosts.push_back(Player(1, true, 2.0f, glm::vec3(-14.0f, -16.0f, 0.0f)));
@@ -452,26 +452,35 @@ void collideWithBricks(Player & p) {
 			while (collision(p.getPlayerPos(), posMap[i])) {
 				p.setPos(-0.01f);
 			}
-			//player.setPos(-0.01f);
+			
 			if(!p.isGhost)
 				p.direction = -1;
 			else {
 				p.direction++;
 				if (p.direction > 3)p.direction = 0;
 			}
-		}
-		
+		}	
 	}
 }
 
 
-void collideWithFood(Player & p) {
-	//for (unsigned int i = posFood.size()-1; i > 0; i--) {
+void collideWithEverything(Player & p) {
+	// collide with food
 	for (unsigned int i = 0; i < posFood.size(); i++) {
 		if (collision(p.pos, posFood[i])) {
 			posFood.erase(posFood.begin() + i);
 			std::cout << "food " << i << '\n';
 		}
 	}
+
+	// collide with ghosts
+	for (unsigned int i = 0; i < ghosts.size(); i++) {
+		if (collision(p.pos, ghosts[i].pos)) {
+			p.pos = glm::vec3(-15.0f, -15.0f, 0.0f);
+		}
+	}
+
+	// collide with wall and push back
+	collideWithBricks(p);
 }
 
