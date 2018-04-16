@@ -23,12 +23,30 @@ MapLoader::MapLoader(std::string filePath) {
 	else std::cout << "Can't load map\n";
 }
 
+
+//
+//	Load tile position where there is 1
+//
 void MapLoader::getMap(std::vector<glm::vec3> &mp)
 {
 	for (int i = 0; i < COLUMNS; i++) {
 		for (int j = 0; j < ROWS; j++) {
 			if (map[i][j] != 0)
 				mp.push_back(glm::vec3((float)j*-1, (float)i*-1, 0.0f));
+		}
+	}
+}
+
+
+//
+//	Load food position where there is 0
+//
+void MapLoader::getFood(std::vector<glm::vec3> &fd)
+{
+	for (int i = 0; i < COLUMNS; i++) {
+		for (int j = 0; j < ROWS; j++) {
+			if (map[i][j] == 0)
+				fd.push_back(glm::vec3((float)j*-1, (float)i*-1, 0.0f));
 		}
 	}
 }

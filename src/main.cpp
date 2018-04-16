@@ -27,6 +27,7 @@ void getDeltaTime();
 // collision stuff
 bool collision(glm::vec3 &p, glm::vec3 &other); // AABB - AABB collision
 void collideWithBricks(Player & p);
+void collideWithFood(Player & p);
 
 
 
@@ -44,13 +45,14 @@ float lastMouseY = WIN_HEIGHT / 2.0f;
 
 // player stuff
 			// spd				start location
-Player player(10.0f, glm::vec3(-15.0f, -15.0f, 0.0f));
+Player player(2.0f, glm::vec3(-15.0f, -15.0f, 0.0f));
 
 
 // lists
 std::vector<Player> ghosts;
 
 std::vector<glm::vec3> posMap;
+std::vector<glm::vec3> posFood;
 //
 //	SHADER
 //
@@ -265,21 +267,35 @@ int main()
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
 
 		int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");	// getting the index of uniform in that program
-		glUniform4f(vertexColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
 
 		glBindVertexArray(VAO);
 		unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+
+		// DRAW TILES (FINISHED)
+		glUniform4f(vertexColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
 		for (unsigned int i = 0; i < posMap.size(); i++) {
 			glm::mat4 model;
 			model = glm::translate(model, posMap[i]);
-			//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), posMap[i]);	// rotate on x
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+
+		// DRAW AND UPDATE FOOD
+		collideWithFood(player);
+		glUniform4f(vertexColorLocation, 1.0f, 0.2f, 1.0f, 1.0f);
+		for (unsigned int i = 0; i < posFood.size(); i++) {
+			glm::mat4 model;
+			model = glm::translate(model, posFood[i]);
+			model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), posFood[i]);	// rotate on x
+			model = glm::scale(model, glm::vec3(0.2f));
 			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
 
-		// UPDATE PLAYER POS
+		// UPDATE PLAYER
 		collideWithBricks(player);
+		// and collidewithghost(   );
 		player.update(deltaTime);
 		glm::mat4 playerModel;
 		playerModel = glm::translate(playerModel, player.getPlayerPos());
@@ -292,7 +308,8 @@ int main()
 
 
 
-		// UPDATE GHOSTS
+		// UPDATE GHOSTS (FINISHED)
+		glUniform4f(vertexColorLocation, 0.2f, 0.2f, 0.2f, 1.0f);
 		for (unsigned int i = 0; i < ghosts.size(); i++) {
 			collideWithBricks(ghosts[i]);
 			ghosts[i].update(deltaTime);
@@ -302,7 +319,6 @@ int main()
 
 			// DRAW GHOST
 			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &ghostModel[0][0]);
-			glUniform4f(vertexColorLocation, 0.2f, 0.2f, 0.2f, 1.0f);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 
@@ -336,10 +352,13 @@ void init()
 
 	MapLoader gameMap("../Assets/level0.DTA");
 	gameMap.getMap(posMap);
-	ghosts.push_back(Player(1, true, 10.0f, glm::vec3(-14.0f, -14.0f, 0.0f)));
-	ghosts.push_back(Player(2, true, 10.0f, glm::vec3(-16.0f, -16.0f, 0.0f)));
-	ghosts.push_back(Player(0, true, 10.0f, glm::vec3(-13.0f, -14.0f, 0.0f)));
-	ghosts.push_back(Player(3, true, 10.0f, glm::vec3(-14.0f, -16.0f, 0.0f)));
+	gameMap.getFood(posFood);
+
+
+	ghosts.push_back(Player(1, true, 2.0f, glm::vec3(-14.0f, -16.0f, 0.0f)));
+	ghosts.push_back(Player(3, true, 2.0f, glm::vec3(-14.0f, -17.0f, 0.0f)));
+	ghosts.push_back(Player(0, true, 2.0f, glm::vec3(-17.0f, -16.0f, 0.0f)));
+	ghosts.push_back(Player(0, true, 2.0f, glm::vec3(-17.0f, -15.0f, 0.0f)));
 }
 
 
@@ -384,7 +403,7 @@ void getDeltaTime()
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
 
-	//deltaTime = 0.01f;
+	// deltaTime = 0.01f;
 
 }
 
@@ -408,18 +427,6 @@ void mouseCall(GLFWwindow * window, double mX, double mY)
 }
 
 
-/*bool collision(Player &p, glm::vec3 &other) // AABB - AABB collision
-{
-	// Collision x-axis?
-
-	bool collisionX = p.getX() + 1 >= other.x &&
-		other.x + 1 >= p.getX();
-	// Collision y-axis?
-	bool collisionY = p.getY() + 1 >= other.y &&
-		other.y + 1 >= p.getY();
-	// Collision only if on both axes
-	return collisionX && collisionY;
-}*/
 
 
 bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
@@ -439,31 +446,11 @@ bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
 
 
 
-/*void collideWithBricks() {
-	for (unsigned int i = 0; i < posMap.size(); i++) {
-		if (collision(player.getLookPos(), posMap[i])) {
-			// std::cout << "collide \n";
-			player.lookahead = player.getPlayerPos();
-			while (!collision(player.getPlayerPos(), posMap[i])){
-				player.setPos(0.01f);
-				player.lookahead = player.getPlayerPos();
-				std::cout << "fuck \n";
-				
-			}
-			player.setPos(-0.01f);
-			player.lookahead = player.getPlayerPos();
-			player.direction = -1;
-		}
-	}
-}*/
-
 void collideWithBricks(Player & p) {
 	for (unsigned int i = 0; i < posMap.size(); i++) {
 		if (collision(p.pos, posMap[i])) {
 			while (collision(p.getPlayerPos(), posMap[i])) {
 				p.setPos(-0.01f);
-				std::cout << "fuck \n";
-
 			}
 			//player.setPos(-0.01f);
 			if(!p.isGhost)
@@ -474,6 +461,17 @@ void collideWithBricks(Player & p) {
 			}
 		}
 		
+	}
+}
+
+
+void collideWithFood(Player & p) {
+	//for (unsigned int i = posFood.size()-1; i > 0; i--) {
+	for (unsigned int i = 0; i < posFood.size(); i++) {
+		if (collision(p.pos, posFood[i])) {
+			posFood.erase(posFood.begin() + i);
+			std::cout << "food " << i << '\n';
+		}
 	}
 }
 

@@ -15,6 +15,7 @@ public:
 	MapLoader();
 	MapLoader(std::string filepath);
 	void getMap(std::vector<glm::vec3> &mp);
+	void getFood(std::vector<glm::vec3> &fd);
 
 };
 
