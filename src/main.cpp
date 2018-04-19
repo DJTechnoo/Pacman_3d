@@ -12,6 +12,7 @@
 #include "map.h"
 #include "const.h"
 #include "player.h"
+#include "user.h"
 
 
 
@@ -46,6 +47,7 @@ float lastMouseY = WIN_HEIGHT / 2.0f;
 // player stuff
 			// spd				start location
 Player player(2.0f, glm::vec3(-15.0f, -15.0f, 0.0f));
+User * user;
 
 
 // lists
@@ -298,6 +300,7 @@ int main()
 		glm::mat4 playerModel;
 		playerModel = glm::translate(playerModel, player.getPlayerPos());
 		playerModel = glm::scale(playerModel, glm::vec3(SIZE));
+		user->display();
 		
 		// DRAW PLAYER
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &playerModel[0][0]);
@@ -353,6 +356,8 @@ void init()
 	gameMap.getFood(posFood);
 	player.pos = gameMap.getTypePos(PLAYER_POS);
 	std::cout << "player " << player.pos.x << '\n';
+
+	user = new User(3);
 
 
 	ghosts.push_back(Player(1, true, 2.0f, glm::vec3(-14.0f, -16.0f, 0.0f)));
@@ -469,7 +474,8 @@ void collideWithEverything(Player & p) {
 	for (unsigned int i = 0; i < posFood.size(); i++) {
 		if (collision(p.pos, posFood[i])) {
 			posFood.erase(posFood.begin() + i);
-			std::cout << "food " << i << '\n';
+			user->updateScore();
+
 		}
 	}
 
@@ -477,6 +483,7 @@ void collideWithEverything(Player & p) {
 	for (unsigned int i = 0; i < ghosts.size(); i++) {
 		if (collision(p.pos, ghosts[i].pos)) {
 			p.pos = glm::vec3(-15.0f, -15.0f, 0.0f);
+			user->loseLive();
 		}
 	}
 
