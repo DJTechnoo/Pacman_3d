@@ -3,11 +3,13 @@
 
 
 class User {
+private:
+	unsigned int MAXSCORE;
+	unsigned int lives, score;
+	bool gameOver, won;
 public:
-	int lives, score;
-	bool gameOver;
 	User();
-	User(int lv);
+	User(unsigned int lv, unsigned int maxScore);
 	void updateScore();
 	void loseLive();
 	void display();

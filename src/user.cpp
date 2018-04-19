@@ -4,20 +4,25 @@
 User::User()
 {
 	lives = 4;
-	gameOver = false;
+	gameOver = won = false;
 	score = 0;
+	MAXSCORE = 100;
 }
 
 
-User::User(int lv)
+User::User(unsigned int lv, unsigned int maxScore)
 {
 	lives = lv;
-	gameOver = false;
+	gameOver = won = false;
 	score = 0;
+	MAXSCORE = maxScore;
 }
 void User::updateScore()
 {
-	score++;
+	if (!won) {
+		score++;
+		if (score >= MAXSCORE) won = true;
+	}
 }
 
 
@@ -31,6 +36,11 @@ void User::loseLive()
 
 void User::display()
 {
-	std::cout << "scr " << score << '\n';
-	std::cout << "lvs " << lives << '\n';
+	if (!won) {
+		std::cout << "scr " << score << '\n';
+		std::cout << "lvs " << lives << '\n';
+	}
+	else if (gameOver) std::cout << "LOSER \n";
+	else std::cout << "WINNER \n";
+	
 }

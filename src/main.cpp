@@ -357,7 +357,7 @@ void init()
 	player.pos = gameMap.getTypePos(PLAYER_POS);
 	std::cout << "player " << player.pos.x << '\n';
 
-	user = new User(3);
+	user = new User(3, 10);
 
 
 	ghosts.push_back(Player(1, true, 2.0f, glm::vec3(-14.0f, -16.0f, 0.0f)));
