@@ -13,6 +13,7 @@
 #include "const.h"
 #include "player.h"
 #include "user.h"
+#include <stdlib.h>
 
 
 
@@ -44,17 +45,17 @@ float lastMouseX = WIN_WIDTH / 2.0f;
 float lastMouseY = WIN_HEIGHT / 2.0f;
 
 
-// player stuff
-			// spd				start location
-Player player(2.0f, glm::vec3(-15.0f, -15.0f, 0.0f));
+// player stuff			
 User * user;
+Player player(2.0f, glm::vec3(-15.0f, -15.0f, 0.0f));
 
 
 // lists
 std::vector<Player> ghosts;
-
 std::vector<glm::vec3> posMap;
 std::vector<glm::vec3> posFood;
+
+
 //
 //	SHADER
 //
@@ -357,11 +358,11 @@ void init()
 	player.pos = gameMap.getTypePos(PLAYER_POS);
 	std::cout << "player " << player.pos.x << '\n';
 
-	user = new User(3, 10);
+	user = new User(3, posFood.size());
 
 
 	ghosts.push_back(Player(1, true, 2.0f, glm::vec3(-14.0f, -16.0f, 0.0f)));
-	ghosts.push_back(Player(3, true, 2.0f, glm::vec3(-14.0f, -17.0f, 0.0f)));
+	ghosts.push_back(Player(2, true, 2.0f, glm::vec3(-14.0f, -17.0f, 0.0f)));
 	ghosts.push_back(Player(0, true, 2.0f, glm::vec3(-17.0f, -16.0f, 0.0f)));
 	ghosts.push_back(Player(0, true, 2.0f, glm::vec3(-17.0f, -15.0f, 0.0f)));
 }
@@ -370,7 +371,6 @@ void init()
 void keyBoard(GLFWwindow * window)
 {
 
-	float camSpd = 20.5f * deltaTime;
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
@@ -461,8 +461,7 @@ void collideWithBricks(Player & p) {
 			if(!p.isGhost)
 				p.direction = -1;
 			else {
-				p.direction++;
-				if (p.direction > 3)p.direction = 0;
+				p.direction = rand() % 4;
 			}
 		}	
 	}
