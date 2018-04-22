@@ -77,9 +77,12 @@ const char * fragmentShaderSrc = "#version 330 core \n"
 "out vec4 FragColor; \n"
 "in vec2 TexCord; \n"
 "uniform vec4 ourColor; \n"
+"uniform vec4 lightColor; \n"
 "uniform sampler2D ourTexture; \n"
 "void main(){ \n"
-"	FragColor = texture(ourTexture, TexCord) * ourColor; \n"
+"	float ambientStrength = 0.1f; \n"
+"	vec4 ambient = ambientStrength * lightColor; \n"
+"	FragColor = ambient * texture(ourTexture, TexCord) * ourColor; \n"
 "} \n \0";
 
 
@@ -243,6 +246,8 @@ int main()
 	
 	glUseProgram(shaderProgram);
 
+	int lightColorLocation = glGetUniformLocation(shaderProgram, "lightColor");
+	glUniform4f(lightColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
 
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(60.0f), (float)WIN_HEIGHT / (float)WIN_WIDTH, 0.1f, 100.0f); // frustum
