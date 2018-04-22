@@ -457,10 +457,14 @@ bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
 
 
 void collideWithBricks(Player & p) {
+	int stuckChecker = 0;
 	for (unsigned int i = 0; i < posMap.size(); i++) {
 		if (collision(p.pos, posMap[i])) {
 			while (collision(p.getPlayerPos(), posMap[i])) {
 				p.setPos(-0.01f);
+
+				stuckChecker++;
+				if (stuckChecker > 100) p.pos = glm::vec3(-15.0f, -15.0f, 0.0f);
 			}
 			
 			if(!p.isGhost)
