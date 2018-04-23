@@ -61,9 +61,12 @@ std::vector<glm::vec3> posFood;
 //
 const char * vertexShaderSrc = "#version 330 core						\n"
 "layout (location = 0) in vec3 aPos;									\n"
-"layout (location = 1) in vec2 aTexCord;								\n"
+"layout (location = 1) in vec3 aNormal;									\n"
+"layout (location = 2) in vec2 aTexCord;								\n"
 
 "out vec2 TexCord;														\n"
+"out vec3 Normal;														\n"
+"out vec3 FragPos;														\n"
 
 "uniform mat4 model;													\n"
 "uniform mat4 view;													\n"
@@ -72,18 +75,27 @@ const char * vertexShaderSrc = "#version 330 core						\n"
 "void main(){															\n"
 "	gl_Position = projection * view * model * vec4(aPos, 1.0f); \n"
 "	TexCord = vec2(aTexCord.x, aTexCord.y);	\n"
+"	FragPos = vec3(model * vec4(aPos, 1.0)); \n"
+"	Normal = aNormal;						\n"
 "}	 \n \0";
 
 const char * fragmentShaderSrc = "#version 330 core \n"
 "out vec4 FragColor; \n"
 "in vec2 TexCord; \n"
+"in vec3 Normal;  \n"
+"in vec3 FragPos; \n"
 "uniform vec4 ourColor; \n"
 "uniform vec4 lightColor; \n"
+"uniform vec3 lightPosition; \n"
 "uniform sampler2D ourTexture; \n"
 "void main(){ \n"
 "	float ambientStrength = 0.1f; \n"
 "	vec4 ambient = ambientStrength * lightColor; \n"
-"	FragColor = ambient * texture(ourTexture, TexCord) * ourColor; \n"
+"	vec3 norm = normalize(Normal);\n"
+"   vec3 lightDir = normalize(lightPosition - FragPos);\n"
+"   float diff = max(dot(norm, lightDir), 0.0);\n"
+"   vec4 diffuse = diff * lightColor;\n"
+"	FragColor = (ambient + diffuse) * texture(ourTexture, TexCord) * ourColor; \n"
 "} \n \0";
 
 
@@ -249,6 +261,9 @@ int main()
 
 	int lightColorLocation = glGetUniformLocation(shaderProgram, "lightColor");
 	glUniform4f(lightColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+
+	int lightPositionLocation = glGetUniformLocation(shaderProgram, "lightPosition");
+	glUniform3f(lightPositionLocation, 10.0f, 10.0f, 10.0f);
 
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(60.0f), (float)WIN_HEIGHT / (float)WIN_WIDTH, 0.1f, 100.0f); // frustum
@@ -457,14 +472,10 @@ bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
 
 
 void collideWithBricks(Player & p) {
-	int stuckChecker = 0;
 	for (unsigned int i = 0; i < posMap.size(); i++) {
 		if (collision(p.pos, posMap[i])) {
 			while (collision(p.getPlayerPos(), posMap[i])) {
 				p.setPos(-0.01f);
-
-				stuckChecker++;
-				if (stuckChecker > 100) p.pos = glm::vec3(-15.0f, -15.0f, 0.0f);
 			}
 			
 			if(!p.isGhost)
