@@ -285,7 +285,7 @@ int main()
 		getDeltaTime();
 		keyBoard(window);
 
-		glClearColor(0.1f, 0.1f, 0.0f, 1.0f);
+		glClearColor(0.0f, 0.05f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 
@@ -307,7 +307,7 @@ int main()
 		unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
 
 		// DRAW TILES (FINISHED)
-		glUniform4f(vertexColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
+		glUniform4f(vertexColorLocation, 0.4f, 0.4f, 1.2f, 1.0f);
 		for (unsigned int i = 0; i < posMap.size(); i++) {
 			glm::mat4 model;
 			model = glm::translate(model, posMap[i]);
@@ -317,7 +317,7 @@ int main()
 
 		// DRAW AND UPDATE FOOD
 		collideWithEverything(player);
-		glUniform4f(vertexColorLocation, 1.0f, 0.2f, 1.0f, 1.0f);
+		glUniform4f(vertexColorLocation, 0.5f, 1.2f, 1.2f, 1.0f);
 		for (unsigned int i = 0; i < posFood.size(); i++) {
 			glm::mat4 model;
 			model = glm::translate(model, posFood[i]);
@@ -343,7 +343,7 @@ int main()
 
 
 		// UPDATE GHOSTS (FINISHED)
-		glUniform4f(vertexColorLocation, 0.2f, 0.2f, 0.2f, 1.0f);
+		glUniform4f(vertexColorLocation, 1.2f, 0.5f, 1.1f, 1.0f);
 		for (unsigned int i = 0; i < ghosts.size(); i++) {
 			collideWithBricks(ghosts[i]);
 			ghosts[i].update(deltaTime);
@@ -486,8 +486,12 @@ bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
 void collideWithBricks(Player & p) {
 	for (unsigned int i = 0; i < posMap.size(); i++) {
 		if (collision(p.pos, posMap[i])) {
+			int preventStuck = 0;
 			while (collision(p.getPlayerPos(), posMap[i])) {
 				p.setPos(-0.01f);
+				preventStuck++;
+				if (preventStuck > 100)
+					p.pos = glm::vec3(-15.0f, -15.0f, 0.0f);
 			}
 			
 			if(!p.isGhost)
