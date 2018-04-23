@@ -88,14 +88,23 @@ const char * fragmentShaderSrc = "#version 330 core \n"
 "uniform vec4 lightColor; \n"
 "uniform vec3 lightPosition; \n"
 "uniform sampler2D ourTexture; \n"
+"uniform vec3 viewPosition;\n"
 "void main(){ \n"
-"	float ambientStrength = 0.1f; \n"
+"	float ambientStrength = 0.1; \n"
 "	vec4 ambient = ambientStrength * lightColor; \n"
+
 "	vec3 norm = normalize(Normal);\n"
 "   vec3 lightDir = normalize(lightPosition - FragPos);\n"
 "   float diff = max(dot(norm, lightDir), 0.0);\n"
 "   vec4 diffuse = diff * lightColor;\n"
-"	FragColor = (ambient + diffuse) * texture(ourTexture, TexCord) * ourColor; \n"
+
+"   float specularStrength = 0.5;\n"
+"   vec3 viewDir = normalize(viewPosition - FragPos);\n"
+"   vec3 reflectDir = reflect(-lightDir, norm);\n"
+"   float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);\n"
+"   vec4 specular = specularStrength * spec * lightColor;\n"
+
+"	FragColor = (ambient + diffuse + specular) * texture(ourTexture, TexCord) * ourColor; \n"
 "} \n \0";
 
 
@@ -263,7 +272,7 @@ int main()
 	glUniform4f(lightColorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
 
 	int lightPositionLocation = glGetUniformLocation(shaderProgram, "lightPosition");
-	glUniform3f(lightPositionLocation, 10.0f, 10.0f, 10.0f);
+	glUniform3f(lightPositionLocation, 20.0f, 20.0f, 0.0f);
 
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(60.0f), (float)WIN_HEIGHT / (float)WIN_WIDTH, 0.1f, 100.0f); // frustum
@@ -284,7 +293,10 @@ int main()
 
 		glm::mat4 view;
 		view = cam.GetViewMatrix();
-
+		
+		//	Since camera location can change, view position is updated continuously
+		int viewPositionLocation = glGetUniformLocation(shaderProgram, "viewPosition");
+		glUniform3f(viewPositionLocation, cam.Position.x, cam.Position.y, cam.Position.z);
 		
 		unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
