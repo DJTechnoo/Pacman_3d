@@ -42,6 +42,8 @@ bool collision(glm::vec3 &p, glm::vec3 &other); // AABB - AABB collision
 void collideWithBricks(Player & p);
 void collideWithEverything(Player & p);
 
+void outOfMap(Player & p);
+
 //	Object loader
 bool loadOBJ(
 	const char * path,
@@ -358,6 +360,10 @@ int main(int argc, char **argv)
 				glDrawArrays(GL_TRIANGLES, 0, 36);
 			}
 
+			// TELEPORTATION
+			outOfMap(player);
+
+
 			// DRAW AND UPDATE FOOD
 			collideWithEverything(player);
 			glUniform4f(vertexColorLocation, 0.5f, 1.2f, 1.2f, 1.0f);
@@ -582,6 +588,21 @@ void collideWithEverything(Player & p) {
 	collideWithBricks(p);
 }
 
+// checks if pacman is outside map and do a teleport
+void outOfMap(Player & p) {
+	
+		// left side
+		if (collision(p.pos, glm::vec3(-30.0f, -17.0f, 0.0f))) {
+			p.pos = glm::vec3(2.0f, -17.0f, 0.0f);
+		}
+		// right side
+		else if (collision(p.pos, glm::vec3(3.0f, -17.0f, 0.0f))) {
+			p.pos = glm::vec3(-29.0f, -17.0f, 0.0f);
+		}
+	
+}
+
+
 //	loadOBJ function is from http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
 
 bool loadOBJ(
@@ -755,14 +776,10 @@ void menu(int value) {
 	}
 	else if (value == 1) {
 		play = true;
-		//glutDestroyWindow(win);
 	}
 	else if (value == 2) {
-		//glutDestroyWindow(win);
 		continueGame = true;
 		play = true;
-
-
 	}
 	// you would want to redraw now
 	glutPostRedisplay();
@@ -835,5 +852,4 @@ void drawText(const char *text, int length, int x, int y) {
 	glMatrixMode(GL_PROJECTION);
 	glLoadMatrixd(matrix);
 	glMatrixMode(GL_MODELVIEW);
-
 }
