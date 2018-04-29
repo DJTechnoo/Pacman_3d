@@ -665,6 +665,8 @@ bool loadOBJ(
 		glm::vec3 normal = temp_normals[normalIndex - 1];
 		out_normals.push_back(normal);
 	}
+
+	return true;
 }
 
 // menuScreen functions
