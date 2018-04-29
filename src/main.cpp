@@ -1,5 +1,5 @@
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
+
 //#include "glm/glm/glm.hpp"
 //#include "shaderload.h"
 #include <iostream>
@@ -12,8 +12,10 @@
 #include "map.h"
 #include "const.h"
 #include "player.h"
+#include <GL\freeglut.h>
+#include <GLFW/glfw3.h>
 #include "user.h"
-#include <stdlib.h>
+#include <Windows.h>
 
 
 
@@ -25,6 +27,15 @@ void init();			// init glfw
 void keyBoard(GLFWwindow * window);
 void mouseCall(GLFWwindow * window, double mX, double mY);
 void getDeltaTime();
+
+// init for glut
+void setupMenu();
+void glutWindowInits();
+
+void createPauseMenu(void);
+void setupPauseMenu();
+void drawText(const char *text, int length, int x, int y);
+
 
 // collision stuff
 bool collision(glm::vec3 &p, glm::vec3 &other); // AABB - AABB collision
@@ -43,7 +54,7 @@ bool loadOBJ(
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-Camera cam(glm::vec3(-20.0f, -20.0f ,40.3f));
+Camera cam(glm::vec3(-20.0f, -20.0f, 40.3f));
 
 // mouse stuff
 bool firstMouse = true;
@@ -119,12 +130,39 @@ const char * fragmentShaderSrc = "#version 330 core \n"
 
 
 
+GLfloat angle = 0.0;	/*Rotationsvinkel*/
+
+void createMenu(void);
+void menu(int value);
+void disp(void);
+
+static int win;
+static int menuid1;
+static int menuid2;
+
+static int val = 0;
+static int fyrkantRoed = 1;
+static int fyrkantGroen = 1;
+static int fyrkantBla = 0;
+static int trekantRoed = 1;
+static int trekantGroen = 0;
+static int trekantBla = 0;
+
+bool play;
+bool continueGame;
+
 
 //
 //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	Main @@@@@@@@@@@@@
 //
-int main()
+int main(int argc, char **argv)
 {
+
+	//glut and menu
+	glutInit(&argc, argv);
+	glutWindowInits();
+	setupMenu();
+
 	init();
 	//	window
 	GLFWwindow * window = glfwCreateWindow(WIN_HEIGHT, WIN_WIDTH, "Well then", NULL, NULL);
@@ -225,9 +263,9 @@ int main()
 	};
 
 	GLuint indices[] = {		// NOTE GLUiNT!!		
-		0, 1, 3,				
-		1, 2, 3					
-	};							
+		0, 1, 3,
+		1, 2, 3
+	};
 
 	//	Load player model
 	loadOBJ("../Assets/YellowSphere.obj", playerVertices, playerUvs, playerNormals);
@@ -253,14 +291,14 @@ int main()
 	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);	// unbind VBO?
-	glBindVertexArray(0);		
+	glBindVertexArray(0);
 
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
 	//	Texture
 	int width, height, nrChannels;
-	unsigned char * data = stbi_load("../Assets/container.jpg",&width, &height, &nrChannels, 0);
+	unsigned char * data = stbi_load("../Assets/container.jpg", &width, &height, &nrChannels, 0);
 
 	GLuint texture1;
 	glGenTextures(1, &texture1);
@@ -268,8 +306,7 @@ int main()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLuint)width, (GLuint)height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	stbi_image_free(data);
-	
-	
+
 	glUseProgram(shaderProgram);
 
 	int lightColorLocation = glGetUniformLocation(shaderProgram, "lightColor");
@@ -286,88 +323,97 @@ int main()
 
 	// loop
 	while (!glfwWindowShouldClose(window)) {
-		getDeltaTime();
-		keyBoard(window);
 
-		glClearColor(0.0f, 0.05f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glBindTexture(GL_TEXTURE_2D, texture1);
+		if (play || continueGame) {
+			getDeltaTime();
+			keyBoard(window);
+
+			glClearColor(0.0f, 0.05f, 0.1f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glBindTexture(GL_TEXTURE_2D, texture1);
 
 
 
-		glm::mat4 view;
-		view = cam.GetViewMatrix();
-		
-		//	Since camera location can change, view position is updated continuously
-		int viewPositionLocation = glGetUniformLocation(shaderProgram, "viewPosition");
-		glUniform3f(viewPositionLocation, cam.Position.x, cam.Position.y, cam.Position.z);
-		
-		unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
+			glm::mat4 view;
+			view = cam.GetViewMatrix();
 
-		int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");	// getting the index of uniform in that program
+			//	Since camera location can change, view position is updated continuously
+			int viewPositionLocation = glGetUniformLocation(shaderProgram, "viewPosition");
+			glUniform3f(viewPositionLocation, cam.Position.x, cam.Position.y, cam.Position.z);
 
-		glBindVertexArray(VAO);
-		unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+			unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
 
-		// DRAW TILES (FINISHED)
-		glUniform4f(vertexColorLocation, 0.4f, 0.4f, 1.2f, 1.0f);
-		for (unsigned int i = 0; i < posMap.size(); i++) {
-			glm::mat4 model;
-			model = glm::translate(model, posMap[i]);
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+			int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");	// getting the index of uniform in that program
+
+			glBindVertexArray(VAO);
+			unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
+
+			// DRAW TILES (FINISHED)
+			glUniform4f(vertexColorLocation, 0.4f, 0.4f, 1.2f, 1.0f);
+			for (unsigned int i = 0; i < posMap.size(); i++) {
+				glm::mat4 model;
+				model = glm::translate(model, posMap[i]);
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+
+			// DRAW AND UPDATE FOOD
+			collideWithEverything(player);
+			glUniform4f(vertexColorLocation, 0.5f, 1.2f, 1.2f, 1.0f);
+			for (unsigned int i = 0; i < posFood.size(); i++) {
+				glm::mat4 model;
+				model = glm::translate(model, posFood[i]);
+				model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), posFood[i]);	// rotate on x
+				model = glm::scale(model, glm::vec3(0.2f));
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+
+
+			// UPDATE PLAYER
+			player.update(deltaTime);
+			glm::mat4 playerModel;
+			playerModel = glm::translate(playerModel, player.getPlayerPos());
+			playerModel = glm::scale(playerModel, glm::vec3(SIZE2));
+			user->display();
+
+			// DRAW PLAYER
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &playerModel[0][0]);
+			glUniform4f(vertexColorLocation, 0.0f, 1.0f, 1.0f, 1.0f);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
+
+			// UPDATE GHOSTS (FINISHED)
+			glUniform4f(vertexColorLocation, 1.2f, 0.5f, 1.1f, 1.0f);
+			for (unsigned int i = 0; i < ghosts.size(); i++) {
+				collideWithBricks(ghosts[i]);
+				ghosts[i].update(deltaTime);
+				glm::mat4 ghostModel;
+				ghostModel = glm::translate(ghostModel, ghosts[i].getPlayerPos());
+				ghostModel = glm::scale(ghostModel, glm::vec3(SIZE2));
+
+				// DRAW GHOST
+				glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &ghostModel[0][0]);
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+
+
+
+			glfwSwapBuffers(window);
+			glfwPollEvents();
 		}
 
-		// DRAW AND UPDATE FOOD
-		collideWithEverything(player);
-		glUniform4f(vertexColorLocation, 0.5f, 1.2f, 1.2f, 1.0f);
-		for (unsigned int i = 0; i < posFood.size(); i++) {
-			glm::mat4 model;
-			model = glm::translate(model, posFood[i]);
-			model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), posFood[i]);	// rotate on x
-			model = glm::scale(model, glm::vec3(0.2f));
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &model[0][0]);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-
-
-		// UPDATE PLAYER
-		player.update(deltaTime);
-		glm::mat4 playerModel;
-		playerModel = glm::translate(playerModel, player.getPlayerPos());
-		playerModel = glm::scale(playerModel, glm::vec3(SIZE));
-		user->display();
-		
-		// DRAW PLAYER
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &playerModel[0][0]);
-		glUniform4f(vertexColorLocation, 0.0f, 1.0f, 1.0f, 1.0f);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-
-		// UPDATE GHOSTS (FINISHED)
-		glUniform4f(vertexColorLocation, 1.2f, 0.5f, 1.1f, 1.0f);
-		for (unsigned int i = 0; i < ghosts.size(); i++) {
-			collideWithBricks(ghosts[i]);
-			ghosts[i].update(deltaTime);
-			glm::mat4 ghostModel;
-			ghostModel = glm::translate(ghostModel, ghosts[i].getPlayerPos());
-			ghostModel = glm::scale(ghostModel, glm::vec3(SIZE));
-
-			// DRAW GHOST
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, &ghostModel[0][0]);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-
-		
-
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		//	} while (play || continueGame);
 	}
 
 	// clean-up
-	glfwTerminate();
+	if (!play && !continueGame) {
+		glfwTerminate();
+	}
+	return 0;
+
 
 
 	return 0;
@@ -408,7 +454,13 @@ void keyBoard(GLFWwindow * window)
 {
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
+
+		//deltaTime = 0;
+		setupPauseMenu();								// just call the setupmenu again to quit game properly
+														//getDeltaTime();
+														//glfwSetWindowShouldClose(window, true);
+														//return;
+														//glfwSetWindowShouldClose(window, true);
 
 
 	if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
@@ -474,10 +526,10 @@ bool collision(glm::vec3 &p, glm::vec3 &other) // AABB - AABB collision
 {
 	// Collision x-axis?
 
-	bool collisionX = p.x + SIZE >= other.x &&
+	bool collisionX = p.x + SIZE2 >= other.x &&
 		other.x + 1 >= p.x;
 	// Collision y-axis?
-	bool collisionY = p.y + SIZE >= other.y &&
+	bool collisionY = p.y + SIZE2 >= other.y &&
 		other.y + 1 >= p.y;
 	// Collision only if on both axes
 	return collisionX && collisionY;
@@ -497,13 +549,13 @@ void collideWithBricks(Player & p) {
 				if (preventStuck > 100)
 					p.pos = glm::vec3(-15.0f, -15.0f, 0.0f);
 			}
-			
-			if(!p.isGhost)
+
+			if (!p.isGhost)
 				p.direction = -1;
 			else {
 				p.direction = rand() % 4;
 			}
-		}	
+		}
 	}
 }
 
@@ -530,6 +582,7 @@ void collideWithEverything(Player & p) {
 	collideWithBricks(p);
 }
 
+<<<<<<< HEAD
 //	loadOBJ function is from http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
 
 bool loadOBJ(
@@ -614,3 +667,175 @@ bool loadOBJ(
 		out_normals.push_back(normal);
 	}
 }
+=======
+
+// menuScreen functions
+
+void createMenu(void) {
+	//////////
+	// MENU //
+	//////////
+
+	// Create the menu
+	menuid1 = glutCreateMenu(menu);
+
+	// Create entries
+	glutAddMenuEntry(" Play ", 1);
+	glutAddMenuEntry(" Exit ", 0);
+
+
+	// Let the menu respond on the right mouse button
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+}
+
+void createPauseMenu(void) {
+	//////////
+	// MENU //
+	//////////
+
+	// Create the menu
+	menuid2 = glutCreateMenu(menu);
+
+	// Create entries
+	glutAddMenuEntry("Continue", 2);
+	glutAddMenuEntry("Exit", 0);
+
+	// Let the menu respond on the right mouse button
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+}
+
+
+
+
+void disp(void) {
+	// Just clean the screen
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glColor3f(1.0, 1.0, 0.0);
+	glBegin(GL_POLYGON);
+	glVertex2f(0.90, 0.50);
+	glVertex2f(0.50, 0.90);
+	glVertex2f(0.50, 0.70);
+	glVertex2f(0.70, 0.40);
+	glVertex2f(0.80, 0.70);
+	glEnd();
+
+
+	std::string text1, text2;
+	text1 = "PACMAN 3D    ___  THE GAME ";
+	glColor3f(0, 1, 0);
+	drawText(text1.data(), text1.size(), 200, 500);
+
+	text2 = "Right click to start the game :D";
+	glColor3f(0, 1, 0);
+	drawText(text2.data(), text2.size(), 200, 100);
+
+
+	glBegin(GL_QUADS);
+	glColor3f(fyrkantRoed, fyrkantGroen, fyrkantBla);
+	glVertex2f(-0.5f, 0.5f); // top left
+	glVertex2f(0.5f, 0.5f); // top right
+	glVertex2f(0.5f, -0.5f); // bottom right
+	glVertex2f(-0.5f, -0.5f); // bottom left
+	glEnd();
+
+
+
+	glFlush();
+}
+
+
+
+void menu(int value) {
+	if (value == 0) {
+		glutDestroyWindow(win);
+		exit(0);
+	}
+	else if (value == 1) {
+		play = true;
+		//glutDestroyWindow(win);
+	}
+	else if (value == 2) {
+		//glutDestroyWindow(win);
+		continueGame = true;
+		play = true;
+
+
+	}
+	// you would want to redraw now
+	glutPostRedisplay();
+	// clear window
+	glutDestroyWindow(win);
+}
+
+
+void setupMenu() {
+	play = false;
+
+	win = glutCreateWindow("GLUT MENU");
+
+	// put all the menu functions in one nice procedure
+	createMenu();
+
+	// set the clearcolor and the callback
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+
+	glutDisplayFunc(disp);
+
+	do {
+		glutMainLoopEvent();
+	} while (!play);
+}
+
+
+
+void setupPauseMenu() {
+	continueGame = false;
+	win = glutCreateWindow("GLUT MENU");
+
+	createPauseMenu();
+
+	// set the clearcolor and the callback
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+
+	glutDisplayFunc(disp);
+
+	do {
+		glutMainLoopEvent();
+	} while (!continueGame);
+
+}
+
+
+void glutWindowInits() {
+
+	glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE);
+	glutInitWindowSize(500, 500);
+	glutInitWindowPosition(100, 100);
+
+}
+
+
+
+void drawText(const char *text, int length, int x, int y) {
+	glMatrixMode(GL_PROJECTION);
+	double *matrix = new double[16];
+	glGetDoublev(GL_PROJECTION_MATRIX, matrix);
+	glLoadIdentity();
+	glOrtho(0, 800, 0, 600, -5, 5);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glRasterPos2i(x, y);
+	for (int i = 0; i < length; i++) {
+		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, (int)text[i]);
+	}
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixd(matrix);
+	glMatrixMode(GL_MODELVIEW);
+
+}
+
+>>>>>>> 39157b6b3d767c8165111d2c6c5ae8cd8b6d3359
