@@ -582,7 +582,6 @@ void collideWithEverything(Player & p) {
 	collideWithBricks(p);
 }
 
-<<<<<<< HEAD
 //	loadOBJ function is from http://www.opengl-tutorial.org/beginners-tutorials/tutorial-7-model-loading/
 
 bool loadOBJ(
@@ -667,7 +666,6 @@ bool loadOBJ(
 		out_normals.push_back(normal);
 	}
 }
-=======
 
 // menuScreen functions
 
@@ -837,5 +835,3 @@ void drawText(const char *text, int length, int x, int y) {
 	glMatrixMode(GL_MODELVIEW);
 
 }
-
->>>>>>> 39157b6b3d767c8165111d2c6c5ae8cd8b6d3359
